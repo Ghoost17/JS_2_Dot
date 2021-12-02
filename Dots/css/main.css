@@ -1,6 +1,6 @@
 #main{
-    width: 600px;
-    height: 360px;
+    width: 825px;
+    height: 425px;
     border: 1px solid black;
     position: relative;
 }
@@ -8,7 +8,8 @@
     width: 25px;
     height: 25px;
     border-radius: 50%;
-    background: black;
+    
+    background: blue;
     position: absolute;
 }
 .circle2{
@@ -22,8 +23,19 @@
     width: 3px;
     height: 3px;
     border-radius: 50%;
-    background: blue;
+    background: black;
     position: absolute;
     left: 100px;
     top:50px;
 }
+.D1
+{
+    color: blue;
+}
+.D2
+{
+    color: red;
+}
+p {
+    margin: 0.1em; 
+  }

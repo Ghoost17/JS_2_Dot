@@ -1,28 +1,31 @@
 $(document).ready(function()
 {
-    let circle1 = $('.circle'),
+    var timer = null; 
+    const
+    circle1 = $('.circle'),
     circle2 = $('.circle2'),
     dot =  $('.dot'),
-    currenttime = Date.now(),
     a1 = 200, 
-    b1 = 100,
-    c1 = ( Math.sqrt(a1*a1-b1*b1)),
-    x1 = '', 
-    y1 = '',
-    x2 = '',
-    y2 = '',
-    alpha = 0.002 * Math.PI,
+    b1 = 100;
+///
+    let
+    x1 = 0, 
+    y1 = 0,
+    x2 = 0, 
+    t = 0,
+    y2 = 0;
+    const
 //=======Start param========
 //Coords dots  1 and 2 +
-    x10 = -1, y10 = 1,
-    x20 = -3, y20 = 2,
-    vx10 = 1, vy10 = 1,
-    vx20 = 2, vy20 = 3,
+    x10 = -80, y10 = 0,
+    x20 = 80, y20 = 0,
+    vx10 = 0, vy10 = 0.05,
+    vx20 = 0, vy20 = -0.05,
 //Mass +
     m1 = 1, m2 = 1,
     m = m1 + m2,
 //Const +
-    G = 6.674e-11,
+    G = 1,// 6.674e-11,
     k = G * m,
 //Vector r(0) and r'(0)
     r10 = x20 - x10,
@@ -35,33 +38,31 @@ $(document).ready(function()
     v0_2 = vr10 * vr10 + vr20 * vr20,
     v0 = Math.sqrt(v0_2),
 
-//Integralls
+//Integrals
     c = r10 * vr20 - r20 * vr10, //Area
-    //c = 1e-11,
     omega0 = c / r0_2,
     h = v0_2 - 2 * k / r0, //Energy 
-//Vec Laplas
+//Vec Laplace
     f1 = k * r10 / r0 - c * vr20,
     f2 = k * r20 / r0 + c * vr10,
-//Elipse param
+//Ellipse param
     p = c * c / k,
     e = Math.sqrt(f1 * f1 + f2 * f2) / k,
-    //e = 0.5,
     a = p / (1 - e*e),
     b = p / Math.sqrt(1 - e*e), 
-//Angles
-    nu0 = Math.acos((r0/p-1)/e),
-    //n = Math.sqrt(k) * Math.pow(a, -1.5),
+//Углы
+    nu0 = Math.acos((p/r0-1)/e),
     n = Math.sqrt(k/(a*a*a)),
     T = 2*Math.PI / n,
-//Anomalies
+//Аномалии
     E0 = Math.acos(r0 * Math.cos(nu0) / a + e),
     M0 = E0 - e * Math.sin(E0),
     tau = -M0 / n ; //Pericenter passTime
-//////////////////////////////////////////////////
-    function Solve_Kepler(e,M)
+
+////////////Решаем численно уравнение Кеплера//////////////////////////////////////
+    const Solve_Kepler = function(e,M)
     {  
-        let eps = 0.0000001,
+        let eps = 0.0001,
             En = E0,
             En1 = E0+1;
         while (true)
@@ -69,17 +70,20 @@ $(document).ready(function()
            En1 = M + e*Math.sin(En);
            if (Math.abs(En1-En)<eps)
            { 
-               alert(En1);
                break;
            };
            En = En1;
-           break;// Его тут быть не должно, но так как что-то не так с н.у. то оно уходит в вечный цикл
         }
        
-      return 1;
-    }
+      return En; 
+    };
+/////////////////////////////////////////////////
 
-    function drawPosition(t)
+    let sign = 1;
+    let sin_is_increasing = true;
+    let last_r_sin_nu = undefined;
+
+    const drawPosition = function(t)
     {
         let M = n * (t-tau),
             E = Solve_Kepler(e,M),
@@ -88,28 +92,78 @@ $(document).ready(function()
             e_cos_nu = (e*e - 1) / (e * cos_E - 1) - 1,
             r = r_cos_nu * e / e_cos_nu,
             r2 = r*r,
-            r_sin_nu = Math.sqrt( r_cos_nu * r_cos_nu - r2),//!!!!
+            r2_diff = r2 - r_cos_nu * r_cos_nu,
+            r_sin_nu = sign * Math.sqrt( Math.abs(r2_diff) ),
             omega = c / r2;
-            
+//Выбор знака у синуса, для верного направления движения объектов
+        if (last_r_sin_nu !== undefined)
+        {
+            if (Math.abs(r_sin_nu) < 0.1 * r)
+            {
+                if (last_r_sin_nu > r_sin_nu && sin_is_increasing
+                    ||  last_r_sin_nu < r_sin_nu && !sin_is_increasing)
+                {
+                    r_sin_nu = -r_sin_nu;
+                    sign = -sign;
+                }
+            }
+            else if (Math.abs(r_sin_nu) > 0.9 * r)
+            {
+                if (last_r_sin_nu > r_sin_nu && sin_is_increasing
+                    ||  last_r_sin_nu < r_sin_nu && !sin_is_increasing)
+                {
+                    sin_is_increasing = !sin_is_increasing;
+                }
+            }
+        }
+        last_r_sin_nu = r_sin_nu;
+//Считаем координаты тел
+        
+        x1 = 2*(a1 + m1 * r_cos_nu / m);
+        y1 = 2*(b1 + m1 * r_sin_nu / m);
         circle1.css({'left':x1,'top':y1});
-        x1 = m1 * r_cos_nu / m;
-        y1 = m1 * r_sin_nu / m;
 
+        x2 = 2*(a1 - m2 * r_cos_nu / m);
+        y2 = 2*(b1 - m2 * r_sin_nu / m); 
         circle2.css({'left':x2,'top':y2});
-        x2 = 2*c1 + a1 * Math.cos(alpha*(t+500));
-        y2 = 180 + b1 * Math.sin(-alpha*(t+500));
-       // alert(e);
-        dot.css({'left':(x1+x2)/2,'top':(y1+y2)/2});
+//Считаеем координаты центра масс
+        dot.css({'left':(x1+x2)/2 + 12.5,'top':(y1+y2)/2 + 12.5});
+//выводим все значения переменных, которые нам нужны, на экран
+        document.getElementById("x1").innerHTML = x1.toFixed(2);
+        document.getElementById("y1").innerHTML = y1.toFixed(2);
+        document.getElementById("x2").innerHTML = x2.toFixed(2);
+        document.getElementById("y2").innerHTML = y2.toFixed(2);
+        document.getElementById("ti").innerHTML = t;
+        document.getElementById("ex").innerHTML = e.toFixed(2);
+        
+     
     }
         
     
 
-   setInterval(function()
+  /* setInterval(function()
    {
         let t = Date.now()-currenttime;
         drawPosition(t);
         
-    },8);
-  
+    },8);*/
+    
+
+    $("#start").click(function()
+    {
+        if (timer !== null) return;
+        timer = setInterval(function () 
+        {
+            t+=10;
+            drawPosition(t);
+      
+        },10); 
+    });
+
+    $("#stop").click(function() 
+    {
+        clearInterval(timer);
+        timer = null
+    });
 });
 
