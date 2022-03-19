@@ -25,7 +25,7 @@ $(document).ready(function()
     m1 = 1, m2 = 1,
     m = m1 + m2,
 //Const +
-    G = 1,// 6.674e-11,
+    G =  1,
     k = G * m,
 //Vector r(0) and r'(0)
     r10 = x20 - x10,
@@ -38,14 +38,13 @@ $(document).ready(function()
     v0_2 = vr10 * vr10 + vr20 * vr20,
     v0 = Math.sqrt(v0_2),
 
-//Integrals
-    c = r10 * vr20 - r20 * vr10, //Area
-    omega0 = c / r0_2,
-    h = v0_2 - 2 * k / r0, //Energy 
-//Vec Laplace
+//интегралы
+    c = r10 * vr20 - r20 * vr10, //Площади
+    h = v0_2 - 2 * k / r0, //Энергии 
+//Вектор Лапласа
     f1 = k * r10 / r0 - c * vr20,
     f2 = k * r20 / r0 + c * vr10,
-//Ellipse param
+//Параметры Элипса
     p = c * c / k,
     e = Math.sqrt(f1 * f1 + f2 * f2) / k,
     a = p / (1 - e*e),
@@ -82,7 +81,20 @@ $(document).ready(function()
     let sign = 1;
     let sin_is_increasing = true;
     let last_r_sin_nu = undefined;
-
+//////////////////////////////////////////////
+    function drawEllipse(ctx, x, y, a,b,color) {
+        ctx.beginPath();
+        ctx.save(); // сохраняем стейт контекста
+        ctx.translate(x, y); // перемещаем координаты в центр эллипса
+       // ctx.rotate(angle); // поворачиваем координатную сетку на нужный угол
+        ctx.scale(1, b/a); // сжимаем по вертикали
+        ctx.arc(0, 0, a, 0, Math.PI*2); // рисуем круг
+        ctx.restore(); // восстанавливает стейт, иначе обводка и заливка будут сплющенными и повёрнутыми
+        ctx.strokeStyle = color;
+        ctx.stroke(); // обводим
+        ctx.closePath();
+    }
+///////////////////////////////////////////////////////////////
     const drawPosition = function(t)
     {
         let M = n * (t-tau),
@@ -95,7 +107,7 @@ $(document).ready(function()
             r2_diff = r2 - r_cos_nu * r_cos_nu,
             r_sin_nu = sign * Math.sqrt( Math.abs(r2_diff) ),
             omega = c / r2;
-//Выбор знака у синуса, для верного направления движения объектов
+//Выбор знака у синуса, для верно го направления движения объектов
         if (last_r_sin_nu !== undefined)
         {
             if (Math.abs(r_sin_nu) < 0.1 * r)
@@ -135,8 +147,41 @@ $(document).ready(function()
         document.getElementById("y2").innerHTML = y2.toFixed(2);
         document.getElementById("ti").innerHTML = t;
         document.getElementById("ex").innerHTML = e.toFixed(2);
+        /////////////////////////////////////////////////////////
+        var ctx = document.getElementById("canvass").getContext("2d");
+        //ctx.globalCompositeOperation = 'destination-over';
+        //ctx.clearRect(0,0,825,425);
+        ctx.fillStyle = '#B1FFF0';
+        ctx.fillRect(0,0,825,425);
+
+        drawEllipse(ctx,(x1+x2)/2+25,(y1+y2)/2,a,b,'red');
+        drawEllipse(ctx,(x1+x2)/2-25,(y1+y2)/2,a,b,'blue');
+
+        ctx.beginPath();
+        ctx.arc(x1, y1, 7.5, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'blue';
+        ctx.fillStyle = 'blue';
+        ctx.fill();
+        ctx.stroke();
+
+
+        ctx.beginPath();
+        ctx.arc(x2, y2, 7.5, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'red';
+        ctx.fillStyle = 'red';
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.arc((x1+x2)/2 , (y1+y2)/2 , 2, 0, 2 * Math.PI);
+        ctx.strokeStyle = 'black';
+        ctx.fillStyle = 'black';
+        ctx.fill();
+        ctx.stroke();
+        ctx.save();
         
-     
+
+
     }
         
     
@@ -156,7 +201,7 @@ $(document).ready(function()
         {
             t+=10;
             drawPosition(t);
-      
+            
         },10); 
     });
 
@@ -165,5 +210,6 @@ $(document).ready(function()
         clearInterval(timer);
         timer = null
     });
+
 });
 
